@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"encoding/gob"
 	"fmt"
 	"os"
@@ -11,24 +10,22 @@ import (
 func main() {
 
 	file := getFile()
-	defer file.Close()
 
 	kvmap := readMap(file)
 	if len(os.Args) > 1 {
 		for _, op := range parseArgs() {
 			handle(op, kvmap)
 		}
+		//save to file after modifying
+		storeMap(kvmap, file)
 	} else {
 		//dump the whole map
-		fmt.Println("Dumping the whole key-value store:")
-		for _, entry := range kvmap {
-			fmt.Println("%s %s", entry[0], entry[1])
+		for key, entry := range kvmap {
+			fmt.Printf("%s = %s\n", key, entry)
 		}
 	}
 
-	//save to file after modifying
-	storeMap(kvmap, file)
-
+	file.Close()
 }
 
 type Op struct {
@@ -66,7 +63,7 @@ func parseArgs() []Op {
 		}
 	}
 
-	fmt.Println("args map: %s ", m) // For debug
+	//fmt.Println("args map: %s ", m) // For debug
 	return m
 }
 
@@ -78,13 +75,13 @@ func handle(op Op, kvmap map[string]string) {
 	if op.mode == "read" {
 		val, exist := kvmap[op.key]
 		if !exist {
-			fmt.Print("%s is an invalid key\n", op.key)
+			fmt.Printf("%s is an invalid key\n", op.key)
 		}
-		fmt.Print("%s\n", val)
+		fmt.Printf("%s\n", val)
 	}
 
 	if op.mode == "write" {
-		fmt.Print("Adding %s as %s.\n", op.key, op.value)
+		fmt.Printf("Adding %s as %s.\n", op.key, op.value)
 		kvmap[op.key] = op.value
 	}
 
@@ -110,33 +107,36 @@ func getFile() (handler *os.File) {
  * Encodes the maps and writes it to the file
  */
 func storeMap(kvmap map[string]string, handler *os.File) {
-	m := new(bytes.Buffer)
-	enc := gob.NewEncoder(m)
 
-	for key, value := range kvmap {
-		fmt.Printf("writing %s %s\n", key, value)
-	}
+	handler.Seek(0, 0)
+	enc := gob.NewEncoder(handler)
 	err := enc.Encode(kvmap)
+
 	if err != nil {
 		panic(err)
 	}
 
-	_, errw := handler.Write(m.Bytes())
-	if err != nil {
-		panic(errw)
-	}
+	//	for key, value := range kvmap {
+	//		fmt.Printf("writing %s %s\n", key, value)
+	//	}
 }
 
 /**
  * Reads the map from the file
  */
 func readMap(handler *os.File) map[string]string {
+	handler.Seek(0, 0)
 	decoder := gob.NewDecoder(handler)
 	kvmap := make(map[string]string)
 
 	// Decode -- We need to pass a pointer otherwise kvmap isn't modified
-	decoder.Decode(&kvmap)
+	err := decoder.Decode(&kvmap)
+	if err != nil {
+		panic(err)
+	}
 
-	fmt.Printf("read %s", kvmap)
+	//	for _, entry := range kvmap {
+	//		fmt.Printf("read %s", entry)
+	//	}
 	return kvmap
 }
