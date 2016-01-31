@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 	"strings"
+	"fmt"
 )
 
 type Op struct {
@@ -47,4 +48,25 @@ func parseArgs() []Op {
 
 	//fmt.Println("args map: %s ", m) // For debug
 	return m
+}
+
+/**
+ * Handles an operation on the map (read/write).
+ */
+func (op Op) handle(store *Store) {
+
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Println(r)
+		}
+	}()
+
+	if op.mode == OP_READ {
+		val := store.get(op.key)
+		fmt.Printf("%s is %s.\n", op.key, val)
+	}
+
+	if op.mode == OP_WRITE {
+		store.set(op.key, op.value)
+	}
 }

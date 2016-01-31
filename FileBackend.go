@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	"io"
 	"encoding/gob"
 )
 
@@ -52,6 +53,9 @@ func (backend FileBackend) ReadMap() map[string]string {
 	// Decode -- We need to pass a pointer otherwise kvmap isn't modified
 	err := decoder.Decode(&kvmap)
 	if err != nil {
+		if (err == io.EOF) {
+			return kvmap
+		}
 		panic(err)
 	}
 

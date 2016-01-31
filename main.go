@@ -12,7 +12,7 @@ func main() {
 
 	if len(os.Args) > 1 {
 		for _, op := range parseArgs() {
-			store.handle(op)
+			op.handle(store)
 		}
 	} else {
 		//dump the whole map

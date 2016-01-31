@@ -1,9 +1,5 @@
 package main
 
-import (
-	"fmt"
-)
-
 type BackendInterface interface {
 	
 	/**
@@ -33,22 +29,15 @@ func NewStore(backend BackendInterface) *Store {
 }
 
 /**
- * Handles an operation on the map (read/write).
+ * key-value setter
  */
-func (store Store) handle(op Op) {
+func (store Store) get(key string) string {
 
-	if op.mode == OP_READ {
-		val, exist := store.kvmap[op.key]
-		if !exist {
-			fmt.Printf("%s is an invalid key\n", op.key)
-		}
-		fmt.Printf("%s\n", val)
+	value, exists := store.kvmap[key]
+	if exists == false {
+		panic("Invalid key")
 	}
-
-	if op.mode == OP_WRITE {
-		fmt.Printf("Adding %s as %s.\n", op.key, op.value)
-		store.set(op.key, op.value)
-	}
+	return value
 }
 
 /**
